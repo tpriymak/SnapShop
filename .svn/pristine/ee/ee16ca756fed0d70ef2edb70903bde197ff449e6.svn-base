@@ -1,0 +1,148 @@
+/**
+ * Timur Priymak 
+ * 10/20/2012 
+ * TCSS 305
+ */
+
+package snapshop.gui;
+
+import javax.swing.*;
+import snapshop.filters.*;
+import snapshop.image.PixelImage;
+import java.awt.BorderLayout;
+import java.awt.FlowLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.IOException;
+
+/**
+ * @author Timur Priymak
+ * @version 10/23 Provides the framework for the SnapShop program.
+ */
+public class SnapShopFrame
+{
+  /**
+   * @field my_frame A JFrame used throughout the program.
+   */
+  private final JFrame my_frame = new JFrame("TCSS 305 Snapshop");
+  /**
+   * @field my_label A JLabel used throughout the program to hold images.
+   */
+  private final JLabel my_label = new JLabel();
+  /**
+   * @field image The image thats loaded and edited by the user.
+   */
+  private PixelImage my_image;
+
+  /**
+   * Sets up the program by making buttons, panels, and adding it all to a
+   * frame.
+   */
+  public void start()
+  {
+    final JPanel panel = new JPanel(new FlowLayout());
+    final JPanel south_panel = new JPanel(new FlowLayout());
+    panel.add(createButton(new EdgeDetectFilter()));
+    panel.add(createButton(new EdgeHighlightFilter()));
+    panel.add(createButton(new FlipHorizontalFilter()));
+    panel.add(createButton(new FlipVerticalFilter()));
+    panel.add(createButton(new GrayscaleFilter()));
+    panel.add(createButton(new SharpenFilter()));
+    panel.add(createButton(new SoftenFilter()));
+    south_panel.add(createButton("Open..."));
+    south_panel.add(createButton("Save As..."));
+    my_frame.add(panel, BorderLayout.NORTH);
+    my_frame.add(south_panel, BorderLayout.SOUTH);
+    my_frame.pack();
+    my_frame.setVisible(true);
+  }
+
+  /**
+   * Creates both the Open and Save As buttons and attaches and ActionListener.
+   * 
+   * @param the_name The name of the button.
+   * @return my_button A new button object.
+   */
+  private JButton createButton(final String the_name)
+  {
+    final JButton button = new JButton(the_name);
+    final JFileChooser chooser = new JFileChooser();
+    button.addActionListener(new ActionListener()
+    {
+      @Override
+      public void actionPerformed(final ActionEvent the_event)
+      {
+        if (the_name.equals("Open..."))
+        {
+          if (chooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION)
+          {
+            my_frame.remove(my_label);
+            try
+            {
+              my_image = PixelImage.load(chooser.getSelectedFile());
+            }
+            catch (final IOException e)
+            {  
+              System.err.println(e.getMessage());
+              JOptionPane.showMessageDialog(null, 
+                                            "This isn't Microsoft Word or some other ish.\nPlease select a valid image.");
+            }
+            my_label.setIcon(new ImageIcon(my_image));
+            my_frame.add(my_label, BorderLayout.CENTER);
+            my_frame.pack();
+          }
+        }
+        else if (the_name.equals("Save As..."))
+        {
+          if (my_image == null)
+          {
+            JOptionPane.showMessageDialog(null, "Please select an image before saving.");
+          }
+          else
+          {
+            if (chooser.showSaveDialog(my_label) == JFileChooser.APPROVE_OPTION)
+            {
+              try
+              {
+                my_image.save(chooser.getSelectedFile());
+              }
+              catch (final IOException e)
+              {
+                System.err.println(e.getMessage());
+              }
+            }
+          }
+        }
+      }
+    });
+    return button;
+  }
+
+  /**
+   * Creates buttons for all the filters.
+   * 
+   * @param the_filter The filter that corresponds with the button.
+   * @return my_button A new button object.
+   */
+  private JButton createButton(final Filter the_filter)
+  {
+    final JButton button = new JButton(the_filter.getName());
+    button.addActionListener(new ActionListener()
+    {
+      @Override
+      public void actionPerformed(final ActionEvent the_event)
+      {
+        if (my_image == null)
+        {
+          JOptionPane.showMessageDialog(null, "Please select an image before filtering.");
+        }
+        else
+        {
+          the_filter.filter(my_image);
+          my_label.setIcon(new ImageIcon(my_image));
+        }
+      }
+    });
+    return button;
+  }
+}
